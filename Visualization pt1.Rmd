@@ -7,5 +7,104 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggridges)
 ```
+
+```{r data_import, cache = TRUE}
+library(rnoaa)
+
+weather_df = 
+  rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
+                      var = c("PRCP", "TMIN", "TMAX"), 
+                      date_min = "2017-01-01",
+                      date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY", 
+                      USC00519397 = "Waikiki_HA",
+                      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+weather_df
+```
+
+#Start a plot
+
+Blank plot
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) #this is in tidyverse package
+```
+
+Scatterplot
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + geom_point() #geom_point - these are points I want to add
+```
+
+Same as above
+```{r}
+weather_df %>% 
+  filter(name == "CentralPark_NY") %>% 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point()
+```
+
+```{r}
+weather_sp = 
+  ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+
+##More plot options
+
+Add an aesthetic to geom_point
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name))
+```
+
+Add a geom
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name)) +
+  geom_smooth(se = FALSE) #adds a smooth line that goes through datapoints; se FALSE gets rid of CI
+```
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = 0.4) + #alpha makes the points more transparent
+  geom_smooth(se = FALSE) 
+```
+
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + #each line for each color
+  geom_point(alpha = 0.4) +
+  geom_smooth(se = FALSE) 
+```
+
+Facetting...
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + 
+  geom_point(alpha = 0.4) +
+  geom_smooth(se = FALSE) +
+  facet_grid( ~ name) #creating three separate plots for each graph
+```
+
+A more interesting plot
+
+```{r}
+ggplot(weather_df, aes(x = date, y = tmax, color = name)) + #seeing maximum temp on what day of the year
+  geom_line() #this connects the points with lines
+```
+
+```{r}
+ggplot(weather_df, aes(x = date, y = tmax, color = name, size = prcp)) + #looking at percipitation 
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  facet_grid(~name)
+```
+
+
 
