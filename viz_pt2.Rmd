@@ -2,7 +2,7 @@
 title: "Visualization pt2"
 author: "Francois Ban"
 date: "10/2/2018"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -16,5 +16,111 @@ knitr::opts_chunk$set(
 
 library(tidyverse)
 library(ggridges)
+```
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
+                      var = c("PRCP", "TMIN", "TMAX"), 
+                      date_min = "2017-01-01",
+                      date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY", 
+                      USC00519397 = "Waikiki_HA",
+                      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+weather_df
+```
+
+First sactterplot:
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package"
+  ) +
+  scale_x_continuous(
+    breaks = c(-15, 0, 15), #the x value labels 
+    labels = c("-15 ºC", "0", "15")
+  )
+```
+
+Transforming into log sqrt
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package"
+  ) +
+  scale_x_continuous(
+    breaks = c(-15, 0, 15), #the x value labels 
+    labels = c("-15 ºC", "0", "15"),
+    limits = c(-20, 42)
+  ) +
+  scale_y_continuous(
+    position = "right",
+    trans = "sqrt"
+  )
+```
+
+## colors and themes
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package"
+  ) +
+  scale_color_hue(
+    name = "Location", #this changes the legend and what its called
+    h = c(100, 350),
+    l = 75
+  )
+```
+
+Using Viridis color palettes
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package"
+  ) +
+  viridis::scale_color_viridis( #default is that we have a continuous argument map
+    name = "Location",
+    discrete = TRUE #this is needed for descrete variables
+  ) 
+```
+
+Moving the legend
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package"
+  ) +
+  viridis::scale_color_viridis( 
+    name = "Location",
+    discrete = TRUE 
+  ) +
+  theme(legend.position = "bottom")
 ```
 
