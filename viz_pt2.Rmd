@@ -124,3 +124,90 @@ ggplot(weather_df, aes(x = tmin, y = tmax)) +
   theme(legend.position = "bottom")
 ```
 
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package"
+  ) +
+  viridis::scale_color_viridis( 
+    name = "Location",
+    discrete = TRUE 
+  ) +
+  theme_bw() + # this gives white background with black lines
+  theme(legend.position = "bottom") #this should go after theme_bw because above overwrites
+```
+
+Revisit the plot showing tmax against date for each location. Use labels, scale options, and theme changes to improve the readability of this plot.
+
+```{r}
+ggplot(weather_df, aes(y = tmax, x = date, color = name)) + #matters to which geom it applies to
+  geom_point(aes(color = name), alpha = .5) + #putting color here vs. up there is specific to point
+ labs(
+    title = "Temperature vs. date",
+    x = "Dates",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package"
+  ) +
+  viridis::scale_color_viridis( 
+    name = "Location",
+    discrete = TRUE 
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+##Arguments to `geom_*`
+
+```{r}
+centralpark_df = weather_df %>% filter(name == "CentralPark_NY")
+waikiki_df = weather_df %>% filter(name == "Waikiki_HA")
+
+ggplot(waikiki_df, aes(x = date, y = tmax, color = name)) +
+  geom_point() + #gives waikiki in scatterplot
+  geom_point(data = centralpark_df) #this gives lines for centralpark
+```
+
+##patchwork
+
+```{r}
+devtools::install_github("thomasp85/patchwork")
+library(patchwork)
+```
+
+
+```{r}
+tmax_tmin_p = ggplot(weather_df, aes(x = tmax, y = tmin, color = name)) + 
+  geom_point(alpha = .5) +
+  theme(legend.position = "none") #removed legend entirely
+
+prcp_dens_p = weather_df %>% 
+  filter(prcp > 0) %>% 
+  ggplot(aes(x = prcp, fill = name)) + 
+  geom_density(alpha = .5) + 
+  theme(legend.position = "none")
+
+tmax_date_p = ggplot(weather_df, aes(x = date, y = tmax, color = name)) + 
+  geom_point(alpha = .5) +
+  geom_smooth(se = FALSE) + 
+  theme(legend.position = "bottom")
+
+tmax_tmin_p + prcp_dens_p + tmax_date_p
+```
+
+
+##data manipulation
+
+factors: (using focats::fct_relevel)
+```{r}
+weather_df %>% 
+  mutate(name = forcats::fct_relevel(name, c("Waikiki_HA", "CentralPark_NY", 
+                                             "Waterhole_WA"))) %>% 
+  ggplot(aes(y = tmax, x = date, fill = name)) +
+  geom_violin(aes(fill = name), color = blue, alpha = .5) +
+  theme(legend.position = "bottom")
+```
+
