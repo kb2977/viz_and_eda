@@ -147,3 +147,14 @@ weather_plot = ggplot(weather_df, aes(x = tmin, y = tmax)) +
 ggsave("weather_plot.pdf", weather_plot, width = 8, height = 5)
 ```
 
+```{r}
+ggplot(weather_df) + geom_point(aes(x = tmax, y = tmin), color = "blue")
+ggplot(weather_df) + geom_point(aes(x = tmax, y = tmin))
+ggplot(weather_df, aes(color = "blue")) + geom_point(aes(x = tmax, y = tmin))
+ggplot(weather_df) + geom_point(aes(x = tmax, y = tmin, color = "blue")) 
+```
+
+
+```{r}
+
+```
