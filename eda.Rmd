@@ -1,0 +1,140 @@
+---
+title: "EDA"
+author: "Francois Ban"
+date: "10/4/2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_bw() + theme(legend.position = "bottom"))
+```
+
+Import Data
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
+                      var = c("PRCP", "TMIN", "TMAX"), 
+                      date_min = "2016-01-01",
+                      date_max = "2016-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY", 
+                      USC00519397 = "Waikiki_HA",
+                      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10,
+    month = lubridate::floor_date(date, unit = "month")) %>% #adds additional variable that gives me the month I care about
+  select(name, id, date, month, everything())
+weather_df
+```
+
+lubricate package - for date packages
+
+##Start grouping
+
+```{r}
+weather_df %>% 
+  group_by(name, month) #name variables i want to group by; can get how many distinct groups there are (can see this next to #group (36))
+```
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(number = n()) #n() function says the count - how many elements r in this group
+```
+
+Counting # of elements in each month (i.e. each group)
+```{r}
+weather_df %>% 
+  group_by(month) %>% 
+  summarize(number = n()) 
+
+weather_df %>% 
+  count(month) #same as above
+```
+
+
+##Grouped Summaries
+```{r}
+month_df = weather_df %>%
+  group_by(month, name) %>%
+  summarize(number = n(), #na.rm = TRUE gets rid of all missing variables
+            num_na = sum(is.na(tmax)), #what is total # of instances that are missing
+            mean_tmax = mean(tmax, na.rm = TRUE), #one number summary of mean of all observations
+            mean_prec = mean(prcp, na.rm = TRUE),
+            median_prcp = median(prcp),
+            sd_tmax = sd(tmax)) %>%
+  ggplot(aes(x = month, y = mean_tmax, color = name)) +
+  geom_point()
+```
+
+```{r}
+ggplot(weather_df, aes(x = date, y = tmax, color = name)) +
+geom_point(alpha = .5) +
+geom_line(data = month_df, aes(x = month, y = mean_tmax))
+```
+
+Tidy is not always best for humans...
+
+```{r}
+weather_df %>%
+  group_by(month, name) %>%
+  summarize(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  spread(key = name, value = mean_tmax) #untidy the data so that people can read it better
+```
+
+##Grouped mutate
+
+```{r}
+weather_df %>%
+  group_by(month, name) %>%
+  mutate(mean_tmax = mean(tmax, na.rm = TRUE)) #takes mean of each of the groups
+```
+
+Mean - gives me one number on other side
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(mean_tmax = mean(tmax, na.rm = TRUE), #average temp in central park and repeat for that block of dataset
+         centered_tmax = tmax - mean_tmax) %>%#gives all of central park but centered around zero
+  ggplot(aes(x = date, y = centered_tmax, color = name)) +
+  geom_point()
+```
+
+
+##Window Functions - computes some function and puts out the same length of numbers (not just one)
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(tmax_rank = min_rank(desc(tmax))) %>%  #use min_rank not rank they give you smallest ranking value when there r ties
+  filter(tmax_rank < 2) #gives you the coldest day
+```
+
+Using lags
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>% #every mutate statement u do respects the grouping from here
+  mutate(lag_tmax = lag(tmax)) #if data isnt in order, you have to order first because it will take a vector from previous and move it forward
+```
+
+##How much does tempertures change from day to day in each area?
+```{r}
+weather_df %>%
+  group_by(name) %>% 
+  mutate(one_day_change = tmax - lag(tmax)) %>% 
+  summarize(sd_one_day_change = sd(one_day_change, na.rm = TRUE))
+```
+
+
+
